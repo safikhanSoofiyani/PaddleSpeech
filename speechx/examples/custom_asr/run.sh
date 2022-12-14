@@ -68,7 +68,7 @@ if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
   wav_scp=$data/wav.scp
   graph=$dir/local/lang
 
-  recognizer_test_main \
+  $PWD/resource/bin/recognizer_test_main \
     --wav_rspecifier=scp:$wav_scp \
     --cmvn_file=$cmvn \
     --use_fbank=true \
