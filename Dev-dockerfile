@@ -8,6 +8,6 @@ WORKDIR /workspaces/classlm
 
 COPY . /workspaces/classlm
 
-RUN cd speechx & bash build.sh
+RUN cd speechx && bash build.sh
 
-RUN cd speechx/examples/custom_asr & bash path.sh & bash run.sh
+RUN cd speechx/examples/custom_asr && bash path.sh && bash run.sh
