@@ -14,27 +14,28 @@ if [ ! -d liblbfgs-1.10 ]; then
 fi
 
 # http://www.speech.sri.com/projects/srilm/download.html
-if [ ! -f srilm.tgz ] && [ ! -f srilm.tar.gz ]; then  # Changed format type from tgz to tar.gz as the srilm v1.7.3 downloads as tar.gz
-  echo This script cannot install SRILM in a completely automatic
-  echo way because you need to put your address in a download form.
-  echo Please download SRILM from http://www.speech.sri.com/projects/srilm/download.html
-  echo put it in ./srilm.tar.gz , then run this script.
-  echo Note: You may have to rename the downloaded file to remove version name from filename eg: mv srilm-1.7.3.tar.gz srilm.tar.gz
-  exit 1
-fi
+# if [ ! -f srilm.tgz ] && [ ! -f srilm.tar.gz ]; then  # Changed format type from tgz to tar.gz as the srilm v1.7.3 downloads as tar.gz
+#   echo This script cannot install SRILM in a completely automatic
+#   echo way because you need to put your address in a download form.
+#   echo Please download SRILM from http://www.speech.sri.com/projects/srilm/download.html
+#   echo put it in ./srilm.tar.gz , then run this script.
+#   echo Note: You may have to rename the downloaded file to remove version name from filename eg: mv srilm-1.7.3.tar.gz srilm.tar.gz
+#   exit 1
+# fi
 
-! which gawk 2>/dev/null && \
-   echo "GNU awk is not installed so SRILM will probably not work correctly: refusing to install" && exit 1;
+# ! which gawk 2>/dev/null && \
+#    echo "GNU awk is not installed so SRILM will probably not work correctly: refusing to install" && exit 1;
 
-mkdir -p srilm
-cd srilm
+# mkdir -p srilm
 
+# if [ -f ../srilm.tgz ]; then
+#     tar -xvzf ../srilm.tgz # Old SRILM format
+# elif [  -f ../srilm.tar.gz ]; then
+#     tar -xvzf ../srilm.tar.gz # Changed format type from tgz to tar.gz
+# fi
 
-if [ -f ../srilm.tgz ]; then
-    tar -xvzf ../srilm.tgz # Old SRILM format
-elif [  -f ../srilm.tar.gz ]; then
-    tar -xvzf ../srilm.tar.gz # Changed format type from tgz to tar.gz
-fi
+git clone https://github.com/BitSpeech/SRILM.git
+cd SRILM
 
 major=`awk -F. '{ print $1 }' RELEASE`
 minor=`awk -F. '{ print $2 }' RELEASE`
