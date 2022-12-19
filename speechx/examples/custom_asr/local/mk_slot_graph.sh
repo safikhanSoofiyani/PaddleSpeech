@@ -14,6 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 
+
+'''
+    This script is used to create personalized LMs.
+    
+    Simply take in the txt files and compile them to the fst files and store in the 
+    lang_test folder.
+'''
+
 graph_slot=$1
 dir=$2
 

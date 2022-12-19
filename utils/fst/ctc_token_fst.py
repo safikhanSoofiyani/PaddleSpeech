@@ -2,6 +2,12 @@
 import argparse
 
 
+'''
+    This file creates a token fst which ignores the multiple repetitions of the phones/characters
+    and generates the final token fst file.
+'''
+
+
 def main(args):
     """Token Transducer"""
     # <eps> entry

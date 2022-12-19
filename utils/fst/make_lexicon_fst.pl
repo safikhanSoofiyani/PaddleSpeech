@@ -41,6 +41,8 @@ if (@ARGV != 1 && @ARGV != 3 && @ARGV != 4) {
   exit(1);
 }
 
+#Doing some bookeeping stuff to get the parse the arguments to this script. Getting and checking the various
+#sil and sil probability and disabmiguation symbols.
 $lexfn = shift @ARGV;
 if (@ARGV == 0) {
   $silprob = 0.0;
@@ -58,30 +60,45 @@ if ($silprob != 0.0) {
 
 open(L, "<$lexfn") || die "Error opening lexicon $lexfn";
 
-
+#If the silence probability is zero,  then (this is our case)
 if ( $silprob == 0.0 ) { # No optional silences: just have one (loop+final) state which is numbered zero.
   $loopstate = 0;
   $nextstate = 1;               # next unallocated state.
   while (<L>) {
     @A = split(" ", $_);
     @A == 0 && die "Empty lexicon line.";
+    
+    #check if in the current line, if <eps> is present or not. Forfeit if <eps> is present
+    #as a phone. This doesnt make sense.
     foreach $a (@A) {
       if ($a eq "<eps>") {
         die "Bad lexicon line $_ (<eps> is forbidden)";
       }
     }
+    #collect the word in $w.
     $w = shift @A;
     if (! $pron_probs) {
       $pron_cost = 0.0;
     } else {
+      #Collect the prononciation probability in $pron_prob from our line.
+      #In our case, it is always 1.0
       $pron_prob = shift @A;
+      
+      #checking if the pronunciation probability is valid.
       if (! defined $pron_prob || !($pron_prob > 0.0 && $pron_prob <= 1.0)) {
         die "Bad pronunciation probability in line $_";
       }
+      
+      #Converting it to negative log probability. From now, we operate with the 
+      #negative log semiring.
       $pron_cost = -log($pron_prob);
     }
     if ($pron_cost != 0.0) { $pron_cost_string = "\t$pron_cost"; } else { $pron_cost_string = ""; }
 
+    #creating the actual transitions now. While recognizing the word, only the first transition
+    #will contain the output as word and remaining all will have output as <eps> (as is convention in
+    #all the research). Effectively in the end, we convert the characters/phones to the word along
+    #with cost associated with each transition as the negative pronunciation probability.
     $s = $loopstate;
     $word_or_eps = $w;
     while (@A > 0) {
@@ -98,7 +115,8 @@ if ( $silprob == 0.0 ) { # No optional silences: just have one (loop+final) stat
     }
   }
   print "$loopstate\t0\n";      # final-cost.
-} else {                        # have silence probs.
+} else {          
+  #This is done if we have silence probs. (Not concerned right now.)
   $startstate = 0;
   $loopstate = 1;
   $silstate = 2;   # state from where we go to loopstate after emitting silence.

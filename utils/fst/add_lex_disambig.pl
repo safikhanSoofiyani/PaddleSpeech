@@ -33,6 +33,12 @@ $pron_probs = 0;
 $sil_probs = 0;
 $first_allowed_disambig = 1;
 
+
+#First check if the the options are set or not i.e., three options:
+#1. --pron-probs
+#2. --sil-probs
+#3. --first-allowed-disambig
+# in our case, all the three are not set.
 for ($n = 1; $n <= 3 && @ARGV > 0; $n++) {
   if ($ARGV[0] eq "--pron-probs") {
     $pron_probs = 1;
@@ -52,6 +58,8 @@ for ($n = 1; $n <= 3 && @ARGV > 0; $n++) {
   }
 }
 
+#If the final two arguments to the call are not present (i.e., the input and output files are absent)
+#then print the message and exit the execution.
 if (@ARGV != 2) {
   die "Usage: add_lex_disambig.pl [opts] <lexicon-in> <lexicon-out>\n" .
     "This script adds disambiguation symbols to a lexicon in order to\n" .
@@ -76,8 +84,8 @@ if (@ARGV != 2) {
 }
 
 
-$lexfn = shift @ARGV;
-$lexoutfn = shift @ARGV;
+$lexfn = shift @ARGV; #the input file i.e., our lexicon file
+$lexoutfn = shift @ARGV; #the output file. Location of our output file
 
 open(L, "<$lexfn") || die "Error opening lexicon $lexfn";
 

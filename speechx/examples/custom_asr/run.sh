@@ -19,22 +19,41 @@ vocab=$model_dir/vocab.txt
 cmvn=$data/cmvn.ark
 text_with_slot=$data/text_with_slot
 resource=$PWD/resource
-# download resource
+
+# if the data and others are not present, then download resource
 if [ ! -f $cmvn ]; then
+    #First download the archive file
     wget -c https://paddlespeech.bj.bcebos.com/s2t/paddle_asr_online/resource.tar.gz
+    #Unzipping the archive file
     tar xzfv resource.tar.gz
+    #creating a symbolic link (like a reference) to the data folder
+    #and keeping that link in our base folder (i.e., custom_asr folder)
     ln -s ./resource/data .
 fi
 
+
+## FIRST STAGE
 if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
   # make dict
+  
+  #copying various files here and there to suit the format
   unit_file=$vocab
   mkdir -p $dir/local/dict
   cp $unit_file $dir/local/dict/units.txt
   cp $text_with_slot $dir/train_text
+  
+  #calling the prepare_dict script.
+  ''' This script is used to: Remove any OOV chars (if working in char domain) and give
+      out a mapping of unique word-char pairs
+      Here, --unit_file = Toke file (or) vocabulary (i.e., file with each line containing a unique token)
+            -- in_lexicon = the lexicon file (i.e., SAFI S A F I)
+            -- out_lexicon = new location of the output lexicon file.
+  '''
+  
   utils/fst/prepare_dict.py --unit_file $unit_file --in_lexicon $data/lexicon.txt \
     --out_lexicon $dir/local/dict/lexicon.txt
   # add slot to lexicon, just in case the lm training script filter the slot.
+  # Explicitly adding the slot information
   echo "<MONEY_SLOT> 一" >> $dir/local/dict/lexicon.txt
   echo "<DATE_SLOT> 一" >> $dir/local/dict/lexicon.txt
   echo "<ADDRESS_SLOT> 一" >> $dir/local/dict/lexicon.txt
@@ -42,31 +61,46 @@ if [ ${stage} -le 1 ] && [ ${stop_stage} -ge 1 ]; then
   echo "<TIME_SLOT> 一" >> $dir/local/dict/lexicon.txt
 fi
 
+
+## SECOND STAGE
 if [ ${stage} -le 2 ] && [ ${stop_stage} -ge 2 ]; then
   # train lm
   lm=$dir/local/lm
   mkdir -p $lm
   # this script is different with the common lm training script
+  
+  #this script first cleans the data and creates appropriate files
+  #to enable easy training using SRILM library. Then it creates a 
+  #ngram class based language model on the training text and creates 
+  #a lm.arpa file. (Suggestion - All the preprocessing steps may be 
+  #written in python to ensure easy following.)
   local/train_lm_with_slot.sh
 fi
 
+
+## THIRD STAGE
 if [ ${stage} -le 3 ] && [ ${stop_stage} -ge 3 ]; then
-  # make T & L
+  # make T & L FST.
   local/compile_lexicon_token_fst.sh $dir/local/dict $dir/local/tmp $dir/local/lang
   mkdir -p $dir/local/lang_test
   # make slot graph
+  #This is essentially creating the personalized LMs
   local/mk_slot_graph.sh $resource/graph $dir/local/lang_test
   # make TLG
+  #This script will first convert the ARPA LM to WFST LM and then apply the replace operation for all slots
+  #then it will do the composition of all the WFST by also determinizing and minimizing.
   local/mk_tlg_with_slot.sh $dir/local/lm $dir/local/lang $dir/local/lang_test || exit 1;
   mv $dir/local/lang_test/TLG.fst $dir/local/lang/
 fi
 
+
+##FOURTH STAGE
 if [ ${stage} -le 4 ] && [ ${stop_stage} -ge 4 ]; then
   # test TLG
-  model_dir=$PWD/resource/model
-  cmvn=$data/cmvn.ark
-  wav_scp=$data/wav.scp
-  graph=$dir/local/lang
+  model_dir=$PWD/resource/model  #Location of the ASR model
+  cmvn=$data/cmvn.ark #Location of the cmvn file (for noise compensation)
+  wav_scp=$data/wav.scp #file listing the locations for all the recordings
+  graph=$dir/local/lang #location of the fst files, word and tokens files
 
   $PWD/resource/bin/recognizer_test_main \
     --wav_rspecifier=scp:$wav_scp \
